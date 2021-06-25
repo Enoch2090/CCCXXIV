@@ -24,6 +24,11 @@ def check_file_expiration(file_list):
     file_all_expired = all([(curr_time-time.mktime(get_time(file_name)))>CACHE_EXPIRE_TIME for file_name in file_list])
     return file_all_expired
 
+def remove_expired_files(file_list):
+    for file_name in file_list:
+        os.remove(file_name)
+
+
 def get_source():
     source_files = [
         os.path.join(CACHE, x) for x in os.listdir(CACHE) if "source_" in x
@@ -37,7 +42,8 @@ def get_source():
     # source_df["URL"] = source_df["URL"].apply(lambda x: f'<a target="_blank" href="{x}">{x}</a>')
     if len(source_files) > CACHE_THRESH and check_file_expiration(source_files):
         with open(DEFAULT_SOURCE, "wb") as f:
-            pickle.dump(source_df, f)        
+            pickle.dump(source_df, f)
+        remove_expired_files(source_files)
     return source_df
 
 def get_submission():
@@ -50,10 +56,11 @@ def get_submission():
         with open(submission_file, "rb") as f:
             submission_df_cache = pickle.load(f)
         submission_df = pd.merge(submission_df, submission_df_cache, how="outer")
-    submission_df["Time"] = submission_df["Time"].apply(lambda x: time.strftime("%Y/%m/%d %H:%M", x))
     if len(submission_files) > CACHE_THRESH and check_file_expiration(submission_files):
         with open(DEFAULT_SUBMISSION, "wb") as f:
-            pickle.dump(submission_df, f) 
+            pickle.dump(submission_df, f)
+        remove_expired_files(submission_files)
+    submission_df["Time"] = submission_df["Time"].apply(lambda x: time.strftime("%Y/%m/%d %H:%M", x))
     return submission_df
 
 # ----------------Functionalities----------------
